@@ -1,0 +1,22 @@
+{
+	"folders": [
+		{
+			"name": "addons",
+			"path": "../../GitHub/p5-in-class-practice-harleiquill/addons"
+		},
+		{
+			"name": ".vscode",
+			"path": "../../GitHub/p5-in-class-practice-harleiquill/.vscode"
+		},
+		{
+			"name": "p5-self-portrait-sp25",
+			"path": "."
+		},
+		{
+			"path": "../../GitHub/p5-in-class-practice-harleiquill/empty-example"
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "p5-self-portrait-sp25"
+	}
+}
