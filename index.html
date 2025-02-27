@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="">
+<html lang="en">
 
 <head>
   <meta charset="utf-8">
@@ -12,17 +12,24 @@
       background-color: #1b1b1b;
     }
   </style>
-  <script src="../p5.min.js"></script>
-  <script src="../addons/p5.sound.js"></script>
+
+  <!-- ✅ Load p5.js FIRST -->
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.5.0/p5.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.5.0/addons/p5.sound.min.js"></script> -->
+
+  <!-- ✅ Load q5.js SECOND -->
   <script src="https://q5js.org/q5.js"></script>
+
+  <!-- ✅ Load p5.play THIRD (AFTER q5.js) -->
   <script src="https://p5play.org/v3/planck.min.js"></script>
   <script src="https://p5play.org/v3/p5play.js"></script>
+
+  <!-- ✅ Load Your Game Script LAST -->
   <script src="sketch.js"></script>
 </head>
 
 <body>
-  <main>
-  </main>
+  <main></main>
 </body>
 
 </html>
