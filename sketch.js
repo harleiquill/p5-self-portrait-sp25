@@ -46,7 +46,7 @@ let startFade = false; // Controls when the fade begins
 // List of random reassuring messages
 const messages = [
   "Oh no! You hit an obstacle!",
-  "Oops! That rock came out of nowhere!",
+  "Oops! That one came out of nowhere!",
   "Bummer! Try again, you've got this!",
   "Oof! Keep swimming, little otter!",
   "Yikes! That was a close one!",
@@ -282,15 +282,13 @@ if (showInstructions) {
         return; // Stop game logic while Game Over screen is active
       }
 }
-  //Key Press handling - instead of ('p' === or 'P' ===) trying to change all instances of p to lowercase p
+  
 // Start the fade effect when a key is pressed
 function keyTyped() {
     if (showInstructions && !startFade) {
       startFade = true; // Begin fading instructions
       return;
-    }
-  
-    if (gameOver) {
+    } else if (isPaused && gameOver) {
         background(30, 20, 60); // Dark background for Game Over screen
         fill(255);
         textSize(30);
@@ -309,7 +307,7 @@ function keyTyped() {
         return; // Exit function early
     }
   
-    if (key.toLowerCase() === 'p') {
+    if (key.toLowerCase() === 'p') {//Key Press handling - instead of ('p' === or 'P' ===) trying to change all instances of p to lowercase p
       isPaused = !isPaused;
     }
   }
