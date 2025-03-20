@@ -6,6 +6,7 @@ let river2X = 0;
 let river2Speed = 0.5; 
 // Define movement boundaries
 let riverTop, riverBottom, riverLeft, riverRight;
+let logImages = []; // Array to store log images
 
 //Otter Vars
 let otterX, otterY; 
@@ -65,6 +66,9 @@ function preload() {
 
   // Load a single otter image
   otterImage = loadImage("Assets/otter_swim1.png");
+  for (let i = 1; i <= 8; i++) {//Using 8 different log images to populate the obstacles as they spawn.
+    logImages.push(loadImage(`Assets/log${i}.png`)); // Loads filenames: log1.png, log2.png, etc.
+  }
 }
 
 function setup() {
@@ -204,7 +208,7 @@ if (showInstructions) {
     textSize(14);
     text("Press P to Pause", canvasWidth / 2, canvasHeight - (bannerHeight / 4));
   
-    // Spawn and Update Obstacles
+    //Spawn and Update Obstacles 
     if (frameCount % spawnRate === 0) {
       let obstacleHeight = 15;
       let obstacleWidth = 40;
@@ -220,13 +224,22 @@ if (showInstructions) {
   
     for (let i = obstacles.length - 1; i >= 0; i--) {
       let obs = obstacles[i];
-      if (!obs) {
-        console.warn(`Skipping undefined obstacle at index ${i}`);
-        continue; // Skip this iteration if obs is undefined
-      }
       obs.x -= obstacleSpeed;
-      fill(255, 50, 50);
-      rect(obs.x, obs.y, obs.width, obs.height);
+      image(logImages[obs.type], obs.x, obs.y, obs.width, obs.height);
+      // if (!obs) {  -- Removing for now
+      //   console.warn(`Skipping undefined obstacle at index ${i}`);
+      //   continue; // Skip this iteration if obs is undefined
+      // } 
+      if (obs.img) {
+        image(obs.img, obs.x, obs.y, obs.width, obs.height); // Draws log image using the array.
+      } else {
+        fill(255, 50, 50);
+        rect(obs.x, obs.y, obs.width, obs.height); // Default red box if something goes wrong
+      }
+      
+      // fill(255, 50, 50);
+      // rect(obs.x, obs.y, obs.width, obs.height); - remove the obstacles as rectangles and move to the log pictures.
+      
       
       if (
         otterX + (otterWidth - hitboxWidth) / 2 < obs.x + obs.width &&  // Adjust left boundary
