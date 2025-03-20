@@ -6,8 +6,6 @@ let river2X = 0;
 let river2Speed = 0.5; 
 // Define movement boundaries
 let riverTop, riverBottom, riverLeft, riverRight;
-let logImages = []; // Array to store log images
-let obs;
 
 //Otter Vars
 let otterX, otterY; 
@@ -48,7 +46,7 @@ let startFade = false; // Controls when the fade begins
 // List of random reassuring messages
 const messages = [
   "Oh no! You hit an obstacle!",
-  "Oops! That one came out of nowhere!",
+  "Oops! That rock came out of nowhere!",
   "Bummer! Try again, you've got this!",
   "Oof! Keep swimming, little otter!",
   "Yikes! That was a close one!",
@@ -67,9 +65,6 @@ function preload() {
 
   // Load a single otter image
   otterImage = loadImage("Assets/otter_swim1.png");
-  for (let i = 1; i <= 8; i++) {//Using 8 different log images to populate the obstacles as they spawn.
-    logImages.push(loadImage(`Assets/log${i}.png`)); // Loads filenames: log1.png, log2.png, etc.
-  }
 }
 
 function setup() {
@@ -209,43 +204,29 @@ if (showInstructions) {
     textSize(14);
     text("Press P to Pause", canvasWidth / 2, canvasHeight - (bannerHeight / 4));
   
-    //Spawn and Update Obstacles 
+    // Spawn and Update Obstacles
     if (frameCount % spawnRate === 0) {
       let obstacleHeight = 15;
       let obstacleWidth = 40;
       let obstacleY = random(riverTop, riverBottom - obstacleHeight);
-      let obstacleType = floor(random(0, logImages.length)); // Pick a random log image
-  
       obstacles.push({
-          x: canvasWidth,
-          y: obstacleY,
-          width: obstacleWidth,
-          height: obstacleHeight, 
-          type: obstacleType, // Assign random type
-          img: logImages[obstacleType] // Assign image from logImages[]
+        x: canvasWidth,
+        y: obstacleY,
+        width: obstacleWidth,
+        height: obstacleHeight
       });
+      console.log("Spawning obstacle at:", canvasWidth, obstacleY);
+    }
   
-      console.log(`Spawning obstacle of type ${obstacleType} at:`, canvasWidth, obstacleY);
-  }
-  
-  // Loop through obstacles and move them
-  for (let i = obstacles.length - 1; i >= 0; i--) {
+    for (let i = obstacles.length - 1; i >= 0; i--) {
       let obs = obstacles[i];
-      obs.x -= obstacleSpeed; // Move obstacle left
-  
-      if (obs.img) {
-          // Use obstacle's assigned image
-          image(obs.img, obs.x, obs.y, obs.width, obs.height);
-      } else {
-          // Only draw red box if image is missing
-          fill(255, 50, 50);
-          rect(obs.x, obs.y, obs.width, obs.height);
+      if (!obs) {
+        console.warn(`Skipping undefined obstacle at index ${i}`);
+        continue; // Skip this iteration if obs is undefined
       }
-  
-      
-      // fill(255, 50, 50);
-      // rect(obs.x, obs.y, obs.width, obs.height); - remove the obstacles as rectangles and move to the log pictures.
-      
+      obs.x -= obstacleSpeed;
+      fill(255, 50, 50);
+      rect(obs.x, obs.y, obs.width, obs.height);
       
       if (
         otterX + (otterWidth - hitboxWidth) / 2 < obs.x + obs.width &&  // Adjust left boundary
@@ -286,7 +267,7 @@ if (showInstructions) {
       messageTimer--;
     }
 
-    if (isPaused && gameOver) {
+    if (gameOver && isPaused) {
         background(30, 20, 60); // Dark background for Game Over screen
         fill(255);
         textSize(24);
@@ -301,13 +282,15 @@ if (showInstructions) {
         return; // Stop game logic while Game Over screen is active
       }
 }
-  
+  //Key Press handling - instead of ('p' === or 'P' ===) trying to change all instances of p to lowercase p
 // Start the fade effect when a key is pressed
 function keyTyped() {
     if (showInstructions && !startFade) {
       startFade = true; // Begin fading instructions
       return;
-    } else if (isPaused && gameOver) {
+    }
+  
+    if (gameOver) {
         background(30, 20, 60); // Dark background for Game Over screen
         fill(255);
         textSize(30);
@@ -326,7 +309,7 @@ function keyTyped() {
         return; // Exit function early
     }
   
-    if (key.toLowerCase() === 'p') {//Key Press handling - instead of ('p' === or 'P' ===) trying to change all instances of p to lowercase p
+    if (key.toLowerCase() === 'p') {
       isPaused = !isPaused;
     }
   }
@@ -335,11 +318,8 @@ function keyTyped() {
   function mousePressed() {
     if (showInstructions && !startFade) {
       startFade = true; // Begin fading
-      } else if (gameOver && isPaused) {
-      startFade = false;
-      showInstructions = true;
+    }
   }
-}
   function checkGameOver() {
     if (lives <= 0) {
       gameOver = true; // Set game over state
