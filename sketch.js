@@ -1,63 +1,43 @@
-let canvasWidth, canvasHeight;//Canvas Vars
+let canvasWidth, canvasHeight;
 
-//River Background Vars
+// River Background
 let riverImage, riverImage2, riverImage3, riverImage4, riverImage5, riverImage6;  
-let river2X = 0; 
-let river2Speed = 0.5; 
-// Define movement boundaries
-let riverTop, riverBottom, riverLeft, riverRight;
-let logImages = []; // Array to store log images
-let obs;
+let river2X = 0, river2Speed = 0.5; 
 
-//Otter Vars
-let otterX, otterY; 
-let otterSpeed = 5; 
-let otterScale = 1.5;
-let otterWidth = 32 * otterScale;
-let otterHeight = 32 * otterScale;
-let otterImage ;
-let rectWidth = otterWidth / 1.8;  // Use the same scaled width as the otter
-let rectHeight = otterHeight / 3;  // Use the same scaled height as the otter
-let hitboxWidth = otterWidth * 0.6;  // Reduce width to % of image width
-let hitboxHeight = otterHeight * 0.2; // Reduce height to % of image height
+// Game States
+let gameState = 0; // 0 = Instructions, 1 = Playing, 2 = Paused, 3 = Game Over
 
-//Collision Vars
-let hitMessage = ""; // Stores the current hit message
-let messageTimer = 0; // Timer for displaying messages
+// Otter
+let otterX, otterY, otterSpeed = 5, otterScale = 1.5;
+let otterWidth = 32 * otterScale, otterHeight = 32 * otterScale;
+let otterImage;
 
-//UI Vars
-let frameColor = [100, 40, 150];  
-let strokeColor = [192, 192, 192];  
-let bannerHeight = 60;
-// let purple = frameColor -- this was to fix an error stating "purple" was not defined, realized I forgot to enclose the color name in backticks.
+// Hitbox
+let hitboxWidth = otterWidth * 0.6, hitboxHeight = otterHeight * 0.26;
 
-// Game variables
-let score = 0;
-let lives = 3;
+// Obstacles
+let logImages = [];
 let obstacles = [];
-let obstacleSpeed = 3.5;
-let spawnRate = 90;
+let obstacleHeight = 15;
+let obstacleSpeed = 3.5, spawnRate = 90;
 
-// Game states
-let isPaused = false;
-let gameOver = false; // Track if the game is over
-let showInstructions = true; // Show instructions at start
-let fadeAlpha = 255; // Start fully visible
-let startFade = false; // Controls when the fade begins
+// Game Variables
+let score = 0, lives = 3;
+let fadeAlpha = 255, startFade = false;
 
-// List of random reassuring messages
+// UI
+let bannerHeight = 60;
 const messages = [
-  "Oh no! You hit an obstacle!",
+  "Oh no! You hit an obstacle!", 
   "Oops! That one came out of nowhere!",
-  "Bummer! Try again, you've got this!",
+  "Bummer! Try again, you've got this!", 
   "Oof! Keep swimming, little otter!",
-  "Yikes! That was a close one!",
+  "Yikes! That was a close one!", 
   "Stay strong! Every otter makes mistakes!"
 ];
 
-
 function preload() {
-  // Preload river background
+  // Load Background Images
   riverImage = loadImage("Assets/River_layer1.png");  
   riverImage2 = loadImage("Assets/River_layer2.png");  
   riverImage3 = loadImage("Assets/River_layer3.png");
@@ -65,140 +45,160 @@ function preload() {
   riverImage5 = loadImage("Assets/River_layer5.png");
   riverImage6 = loadImage("Assets/River_layer6.png");
 
-  // Load a single otter image
+  // Load Otter Image
   otterImage = loadImage("Assets/otter_swim1.png");
-  for (let i = 1; i <= 8; i++) {//Using 8 different log images to populate the obstacles as they spawn.
-    logImages.push(loadImage(`Assets/log${i}.png`)); // Loads filenames: log1.png, log2.png, etc.
+
+  // Load Obstacle Images (log0.png - log7.png)
+  for (let i = 0; i < 8; i++) {
+    logImages.push(loadImage(`Assets/log${i}.png`));
   }
 }
 
 function setup() {
-    //Canvas Creation
   canvasWidth = windowWidth * 0.8;  
   canvasHeight = windowHeight * 0.8;  
   createCanvas(canvasWidth, canvasHeight); 
 
-  //River boundaries for otter movement.
-  let riverBase = canvasHeight * 0.75; 
-  let riverRange = canvasHeight * 0.3; 
+  let riverBase = canvasHeight * 0.75, riverRange = canvasHeight * 0.3; 
   riverTop = riverBase - riverRange;  
   riverBottom = riverBase;  
   riverLeft = 20; 
   riverRight = canvasWidth / 2; 
 
-  //Otter spawn location
   otterX = riverLeft + 50;
-  otterY = riverBottom - (riverRange / 2); 
+  otterY = riverBottom - (riverRange / 2);
 }
 
 function draw() {
-    background(220); // Clear screen for next frame
-  
-// Show Instruction Screen Before Game Starts with a fade effect
-if (showInstructions) {
-    background(100, 40, 150);
+  background(220);
 
-    fill(255, fadeAlpha); // Apply fade effect only when fading
+  if (gameState === 0) {  // **INSTRUCTION SCREEN**
+    background(100, 40, 150);
+    fill(255, fadeAlpha);
     textSize(30);
     textAlign(CENTER, CENTER);
     text("Welcome to Current Course!", canvasWidth / 2, canvasHeight * 0.3);
-
     textSize(20);
     text("An Otter-based game where you dodge obstacles!", canvasWidth / 2, canvasHeight * 0.4);
-
     textSize(18);
-    text("Use WASD or Arrow keys to move the otter and dodge the obstacles!", canvasWidth / 2, canvasHeight * 0.6);
-
+    text("Use WASD or Arrow keys to move", canvasWidth / 2, canvasHeight * 0.6);
     textSize(18);
     text("Press any key or click to start!", canvasWidth / 2, canvasHeight * 0.7);
 
-    // Start fade only if input was detected
     if (startFade) {
-      fadeAlpha -= 5; // Adjust for faster/slower fade
-
-      // Once fully faded, exit instruction screen
-      if (fadeAlpha <= 0) {
-        showInstructions = false;
-      }
+      fadeAlpha -= 5;
+      if (fadeAlpha <= 0) gameState = 1;
     }
-
-    return; // Stops game logic until instructions fade out
+    return;
   }
+
+  if (gameState === 2) {  // **PAUSED SCREEN**
+    background(0);
+    fill(255);
+    textSize(30);
+    textAlign(CENTER, CENTER);
+    text("PAUSED", canvasWidth / 2, canvasHeight * 0.3);
+    textSize(24);
+    text("Press 'P' to Resume", canvasWidth / 2, canvasHeight * 0.5);
+    return;
+  }
+
+  if (gameState === 3) {  // **GAME OVER SCREEN**
+    background(30, 20, 60);
+    fill(255);
+    textSize(30);
+    textAlign(CENTER, CENTER);
+    text("Aw, little otter, you look pretty tired!", canvasWidth / 2, canvasHeight * 0.3);
+    textSize(24);
+    text("Let's take a break.", canvasWidth / 2, canvasHeight * 0.4);
+    textSize(20);
+    text(`Your score this round was: ${score}`, canvasWidth / 2, canvasHeight * 0.5);
+    textSize(18);
+    text("Press any key to try again.", canvasWidth / 2, canvasHeight * 0.6);
+    return;
+  }
+
+  // **GAMEPLAY (gameState === 1)**
   
-    //Show Pause Screen if Paused
-    if (isPaused) {
-      background('0, 0, 0');
-      fill(100, 40, 150, 150);
-      rect(canvasWidth / 4, canvasHeight / 3, canvasWidth / 2, canvasHeight / 4, 20);
-      fill(255);
-      textSize(30);
-      textAlign(CENTER, CENTER);
-      text("PAUSED!");
-      textSize(24);
-      text("Movement keys are WASD or the arrows", canvasWidth / 2, canvasHeight / 2.3);
-      text("Press 'P' to Resume", canvasWidth / 2, canvasHeight / 2);
-      return;
+  // Draw River
+  image(riverImage6, 0, 0, canvasWidth, canvasHeight);
+  image(riverImage5, 0, 0, canvasWidth, canvasHeight);
+  image(riverImage4, 0, 0, canvasWidth, canvasHeight);
+
+  image(riverImage2, river2X, 0, canvasWidth, canvasHeight);
+  image(riverImage2, river2X + canvasWidth, 0, canvasWidth, canvasHeight);
+
+  river2X -= river2Speed;
+  if (river2X <= -canvasWidth) river2X = 0;
+
+  image(riverImage3, 0, 0, canvasWidth, canvasHeight);
+  image(riverImage, 0, 0, canvasWidth, canvasHeight);
+
+  // Draw Otter
+  if (otterImage) image(otterImage, otterX, otterY, otterWidth, otterHeight);
+  // DEBUG: Visualize the hitbox
+  fill(255, 0, 0, 0); // Semi-transparent red
+  noStroke();
+rect(
+  otterX + (otterWidth - hitboxWidth) / 2 - hitboxWidth * 0.1,  // Center horizontally
+  otterY + (otterHeight - hitboxHeight) / 2 + hitboxHeight * 0.6,  // Move DOWN slightly
+  hitboxWidth,
+  hitboxHeight
+);
+
+
+  // Otter Movement
+  if (keyIsDown(UP_ARROW) || keyIsDown(87)) otterY -= otterSpeed;
+  if (keyIsDown(DOWN_ARROW) || keyIsDown(83)) otterY += otterSpeed;
+  if (keyIsDown(LEFT_ARROW) || keyIsDown(65)) otterX -= otterSpeed;
+  if (keyIsDown(RIGHT_ARROW) || keyIsDown(68)) otterX += otterSpeed;
+
+  otterY = constrain(otterY, riverTop + hitboxHeight / 2 - 20, riverBottom - hitboxHeight / 2 - 40);
+  otterX = constrain(otterX, riverLeft, riverRight - hitboxWidth);
+
+  // **SPAWN OBSTACLES**
+  if (frameCount % spawnRate === 0) {
+    let obstacleY = random(riverTop, riverBottom - obstacleHeight * 0.9); // Moves spawn area lower based on obstacle height
+    let logType = floor(random(0, 8));
+    obstacles.push({
+      x: canvasWidth,
+      y: obstacleY,
+      width: 40,
+      height: 15,
+      img: logImages[logType]
+    });
+  }
+
+  // **UPDATE OBSTACLES & CHECK COLLISION**
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    let obs = obstacles[i];
+    obs.x -= obstacleSpeed;
+
+    if (obs.img) image(obs.img, obs.x, obs.y, obs.width, obs.height);
+    else {
+      fill(255, 50, 50);
+      rect(obs.x, obs.y, obs.width, obs.height);
     }
-  
-    //Draw River Background Layers in the proper order for layering, Animation of layer 2.
-    image(riverImage6, 0, 0, canvasWidth, canvasHeight);
-    image(riverImage5, 0, 0, canvasWidth, canvasHeight);
-    image(riverImage4, 0, 0, canvasWidth, canvasHeight);
-  
-    image(riverImage2, river2X, 0, canvasWidth, canvasHeight);
-    image(riverImage2, river2X + canvasWidth, 0, canvasWidth, canvasHeight);
-  
-    if (!isPaused) {
-      river2X -= river2Speed;
-      if (river2X <= -canvasWidth) {
-        river2X = 0;
-      }
+
+    // **Collision Detection**
+    if (
+      otterX + (otterWidth - hitboxWidth) / 2 < obs.x + obs.width &&
+      otterX + hitboxWidth + (otterWidth - hitboxWidth) / 2 > obs.x &&
+      otterY + (otterHeight - hitboxHeight) / 2 < obs.y + obs.height &&
+      otterY + hitboxHeight + (otterHeight - hitboxHeight) / 2 > obs.y
+    ) {
+      lives--;
+      obstacles.splice(i, 1);
+      if (lives <= 0) gameState = 3;
+    } else if (obs.x + obs.width < 0) {
+      score += 10;
+      obstacles.splice(i, 1);
     }
-  
-    image(riverImage3, 0, 0, canvasWidth, canvasHeight);
-    image(riverImage, 0, 0, canvasWidth, canvasHeight);
-  
-    // // **Draw Otter and Animate It**
-    // if (!imagesLoaded || otterFrames.length === 0) {
-    //   console.log("Otter images not loaded yet!");
-    //   return;
-    // }
-  
-    // frameCounter++;
-    // if (frameCounter % frameDelay === 0) {
-    //   currentFrame = (currentFrame + 1) % otterFrames.length;
-    // }
-  
-// //Code to draw the otter.
-//     //Draw the otter as a rectangle first 
-//     fill(100, 100, 255);
-//     rect(otterX, otterY, rectWidth, rectHeight);
-  
-    //Draw the image at the same rectangle location
-    if (otterImage) {
-      image(otterImage, otterX, otterY, otterWidth, otterHeight);
-    }
-  
-    //Handle Otter Movement
-    if (!isPaused) {
-      if (keyIsDown(UP_ARROW) || keyIsDown(87)) otterY -= otterSpeed;
-      if (keyIsDown(DOWN_ARROW) || keyIsDown(83)) otterY += otterSpeed;
-      if (keyIsDown(LEFT_ARROW) || keyIsDown(65)) otterX -= otterSpeed;
-      if (keyIsDown(RIGHT_ARROW) || keyIsDown(68)) otterX += otterSpeed;
-    }
-  
-    //Keep the otter inside the river boundaries
-    // otterY = constrain(otterY, riverTop, riverBottom - otterHeight);
-    // otterX = constrain(otterX, riverLeft, riverRight - otterWidth);
-    //Keep the otter inside the river boundaries, using the new hitbox that counters the image transparency height making the otter too tall.
-    otterY = constrain(otterY, riverTop + hitboxHeight / 2, riverBottom - hitboxHeight / 2);
-    otterX = constrain(otterX, riverLeft, riverRight - hitboxWidth);
-    
-    // Draw Bottom Banner
+    // Display Bottom Banner
     fill(100, 40, 150);
     noStroke();
     rect(0, canvasHeight - bannerHeight, canvasWidth, bannerHeight);
-  
+
     fill(255);
     textSize(20);
     textAlign(LEFT, CENTER);
@@ -208,143 +208,33 @@ if (showInstructions) {
     textAlign(CENTER, CENTER);
     textSize(14);
     text("Press P to Pause", canvasWidth / 2, canvasHeight - (bannerHeight / 4));
-  
-    //Spawn and Update Obstacles 
-    if (frameCount % spawnRate === 0) {
-      let obstacleHeight = 15;
-      let obstacleWidth = 40;
-      let obstacleY = random(riverTop, riverBottom - obstacleHeight);
-      let obstacleType = floor(random(0, logImages.length)); // Pick a random log image
-  
-      obstacles.push({
-          x: canvasWidth,
-          y: obstacleY,
-          width: obstacleWidth,
-          height: obstacleHeight, 
-          type: obstacleType, // Assign random type
-          img: logImages[obstacleType] // Assign image from logImages[]
-      });
-  
-      console.log(`Spawning obstacle of type ${obstacleType} at:`, canvasWidth, obstacleY);
-  }
-  
-  // Loop through obstacles and move them
-  for (let i = obstacles.length - 1; i >= 0; i--) {
-      let obs = obstacles[i];
-      obs.x -= obstacleSpeed; // Move obstacle left
-  
-      if (obs.img) {
-          // Use obstacle's assigned image
-          image(obs.img, obs.x, obs.y, obs.width, obs.height);
-      } else {
-          // Only draw red box if image is missing
-          fill(255, 50, 50);
-          rect(obs.x, obs.y, obs.width, obs.height);
-      }
-  
-      
-      // fill(255, 50, 50);
-      // rect(obs.x, obs.y, obs.width, obs.height); - remove the obstacles as rectangles and move to the log pictures.
-      
-      
-      if (
-        otterX + (otterWidth - hitboxWidth) / 2 < obs.x + obs.width &&  // Adjust left boundary
-        otterX + hitboxWidth + (otterWidth - hitboxWidth) / 2 > obs.x && // Adjust right boundary
-        otterY + (otterHeight - hitboxHeight) / 2 < obs.y + obs.height && // Adjust top boundary
-        otterY + hitboxHeight + (otterHeight - hitboxHeight) / 2 > obs.y // Adjust bottom boundary
-      ) {
-    //   if ( -- This was collision detection of the otter, but I am changing to a hitbox to circumvent the image being larger with a transparent background.
-    //     otterX < obs.x + obs.width &&
-    //     otterX + otterWidth > obs.x &&
-    //     otterY < obs.y + obs.height &&
-    //     otterY + otterHeight > obs.y
-    //   ) {
-        lives -= 1;
-        hitMessage = random(messages);
-        messageTimer = 120;
-        obstacles.splice(i, 1);
-        if (lives <= 0) {
-          score = 0;
-          lives = 3;
-          obstacles = [];
-        }
-      } else if (obs.x + obs.width < 0) {
-        score += 10;
-        obstacles.splice(i, 1);
-      }
-    }
-  
-    //Display Hit Message if Active
-    if (messageTimer > 0) {
-      fill(0);
-      textSize(30);
-      textAlign(CENTER, CENTER);
-      stroke(0);
-      strokeWeight(2);
-      fill(255);
-      text(hitMessage, canvasWidth / 2, canvasHeight / 3);
-      messageTimer--;
-    }
-
-    if (isPaused && gameOver) {
-        background(30, 20, 60); // Dark background for Game Over screen
-        fill(255);
-        textSize(24);
-        textAlign(CENTER, CENTER);
-        text("Aw, little otter, you look pretty tired!", canvasWidth / 2, canvasHeight * 0.3);
-        textSize(30);
-        text("Let's take a break.", canvasWidth / 2, canvasHeight * 0.4);
-        textSize(24);
-        text(`Your score this round was: ${score}`, canvasWidth / 2, canvasHeight * 0.5);
-        textSize(24);
-        text("Press any key to try again.", canvasWidth / 2, canvasHeight * 0.6);
-        return; // Stop game logic while Game Over screen is active
-      }
 }
-  
-// Start the fade effect when a key is pressed
+  }
+
+
+// Handle Keypress
 function keyTyped() {
-    if (showInstructions && !startFade) {
-      startFade = true; // Begin fading instructions
-      return;
-    } else if (isPaused && gameOver) {
-        background(30, 20, 60); // Dark background for Game Over screen
-        fill(255);
-        textSize(30);
-        textAlign(CENTER, CENTER);
-        text("Aw, little otter, you look pretty tired!", canvasWidth / 2, canvasHeight * 0.3);
-        
-        textSize(24);
-        text("Let's take a break.", canvasWidth / 2, canvasHeight * 0.4);
-        
-        textSize(20);
-        text(`Your score this round was: ${score}`, canvasWidth / 2, canvasHeight * 0.5);
-        
-        textSize(18);
-        text("Press any key to try again.", canvasWidth / 2, canvasHeight * 0.6);
-        
-        return; // Exit function early
-    }
-  
-    if (key.toLowerCase() === 'p') {//Key Press handling - instead of ('p' === or 'P' ===) trying to change all instances of p to lowercase p
-      isPaused = !isPaused;
-    }
-  }
-  
-  // Start the fade effect when mouse is clicked
-  function mousePressed() {
-    if (showInstructions && !startFade) {
-      startFade = true; // Begin fading
-      } else if (gameOver && isPaused) {
-      startFade = false;
-      showInstructions = true;
+  if (gameState === 0) { 
+    startFade = true;
+  } else if (gameState === 1 && key.toLowerCase() === 'p') { 
+    gameState = 2;
+  } else if (gameState === 2 && key.toLowerCase() === 'p') { 
+    gameState = 1;
+  } else if (gameState === 3) { 
+    gameState = 0;
+    lives = 3; // RESET LIVES on restart from gameOver
+    score = 0; // RESET SCORE so it's not carried over
+    obstacles = []; // CLEAR OBSTACLES
   }
 }
-  function checkGameOver() {
-    if (lives <= 0) {
-      gameOver = true; // Set game over state
-      isPaused = true; //Stop Game logic from running.
-    }
-  }
 
-  
+// Restart on Click
+function mousePressed() {
+  if (gameState === 3) {
+    gameState = 0; // On gameOver, restart at the instruction screen.
+    lives = 3; // RESET LIVES
+    score = 0; // RESET SCORE
+    obstacles = []; // CLEAR OBSTACLES
+  }
+  if (gameState === 0) gameState = 1; // From instruction screen, start game.
+}
