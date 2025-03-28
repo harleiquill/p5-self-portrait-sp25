@@ -6,6 +6,7 @@ let river2X = 0, river2Speed = 0.5;
 
 // Game States
 let gameState = 0; // 0 = Instructions, 1 = Playing, 2 = Paused, 3 = Game Over
+let instBack; // variable to sort out background for instruction screen
 
 // Otter
 let otterX, otterY, otterSpeed = 5, otterScale = 1.5;
@@ -21,8 +22,13 @@ let obstacles = [];
 let obstacleHeight = 15;
 let obstacleSpeed = 3.5, spawnRate = 90;
 
+//Collision Vars
+let hitMessage = ""; // Stores the current hit message
+let messageTimer = 0; // Timer for displaying messages
+
 // Game Variables
-let score = 0, lives = 3;
+let score = 0;
+let lives = 3;
 let fadeAlpha = 255, startFade = false;
 
 // UI
@@ -44,6 +50,7 @@ function preload() {
   riverImage4 = loadImage("Assets/River_layer4.png");
   riverImage5 = loadImage("Assets/River_layer5.png");
   riverImage6 = loadImage("Assets/River_layer6.png");
+  instBack = loadImage("Assets/otterbackground.png");
 
   // Load Otter Image
   otterImage = loadImage("Assets/otter_swim1.png");
@@ -72,9 +79,23 @@ function setup() {
 function draw() {
   background(220);
 
-  if (gameState === 0) {  // **INSTRUCTION SCREEN**
-    background(100, 40, 150);
-    fill(255, fadeAlpha);
+  if (gameState === 0) {  // INSTRUCTION SCREEN
+    image(instBack, 0, 0, canvasWidth, canvasHeight);
+    // background(100, 40, 150);
+    // Semi-transparent black box behind the text
+fill(0, 0, 0, 127); // RGBA — 127 is 50% opacity
+noStroke();
+let boxWidth = canvasWidth * 0.8;
+let boxHeight = canvasHeight * 0.5;
+let boxX = (canvasWidth - boxWidth) / 2;
+let boxY = canvasHeight * 0.25;
+
+rect(boxX, boxY, boxWidth, boxHeight, 20); // Optional: rounded corners
+
+fill(255);        // white text fill
+stroke(0);        // black outline
+strokeWeight(2);  // make the outline visible but not too thick
+
     textSize(30);
     textAlign(CENTER, CENTER);
     text("Welcome to Current Course!", canvasWidth / 2, canvasHeight * 0.3);
@@ -92,9 +113,23 @@ function draw() {
     return;
   }
 
-  if (gameState === 2) {  // **PAUSED SCREEN**
+  if (gameState === 2) {  // PAUSED SCREEN
     background(0);
-    fill(255);
+    image(instBack, 0, 0, canvasWidth, canvasHeight);
+    // Semi-transparent black box behind the text
+fill(0, 0, 0, 127); // RGBA — 127 is 50% opacity
+noStroke();
+let boxWidth = canvasWidth * 0.8;
+let boxHeight = canvasHeight * 0.5;
+let boxX = (canvasWidth - boxWidth) / 2;
+let boxY = canvasHeight * 0.25;
+
+rect(boxX, boxY, boxWidth, boxHeight, 20); // Optional: rounded corners
+
+fill(255);        // white text fill
+stroke(0);        // black outline
+strokeWeight(2);  // make the outline visible but not too thick
+
     textSize(30);
     textAlign(CENTER, CENTER);
     text("PAUSED", canvasWidth / 2, canvasHeight * 0.3);
@@ -103,9 +138,22 @@ function draw() {
     return;
   }
 
-  if (gameState === 3) {  // **GAME OVER SCREEN**
-    background(30, 20, 60);
-    fill(255);
+  if (gameState === 3) {  // GAME OVER SCREEN
+    image(instBack, 0, 0, canvasWidth, canvasHeight);
+    // Semi-transparent black box behind the text
+fill(0, 0, 0, 127); // RGBA — 127 is 50% opacity
+noStroke();
+let boxWidth = canvasWidth * 0.8;
+let boxHeight = canvasHeight * 0.5;
+let boxX = (canvasWidth - boxWidth) / 2;
+let boxY = canvasHeight * 0.25;
+
+rect(boxX, boxY, boxWidth, boxHeight, 20); // Optional: rounded corners
+
+fill(255);        // white text fill
+stroke(0);        // black outline
+strokeWeight(2);  // make the outline visible but not too thick
+
     textSize(30);
     textAlign(CENTER, CENTER);
     text("Aw, little otter, you look pretty tired!", canvasWidth / 2, canvasHeight * 0.3);
@@ -116,9 +164,10 @@ function draw() {
     textSize(18);
     text("Press any key to try again.", canvasWidth / 2, canvasHeight * 0.6);
     return;
+
   }
 
-  // **GAMEPLAY (gameState === 1)**
+  // GAMEPLAY (gameState === 1)
   
   // Draw River
   image(riverImage6, 0, 0, canvasWidth, canvasHeight);
@@ -133,15 +182,31 @@ function draw() {
 
   image(riverImage3, 0, 0, canvasWidth, canvasHeight);
   image(riverImage, 0, 0, canvasWidth, canvasHeight);
+    // Display Bottom Banner
+    fill(100, 40, 150);
+    noStroke();
+    rect(0, canvasHeight - bannerHeight, canvasWidth, bannerHeight);
 
+    fill(255);        // white text fill for message in box
+    stroke(0);        // black outline
+    strokeWeight(2);  // make the outline visible 
+
+    textSize(20);
+    textAlign(LEFT, CENTER);
+    text(`Otters: ${lives}`, 20, canvasHeight - (bannerHeight / 2));
+    textAlign(RIGHT, CENTER);
+    text(`Score: ${score}`, canvasWidth - 20, canvasHeight - (bannerHeight / 2));
+    textAlign(CENTER, CENTER);
+    textSize(14);
+    text("Press P to Pause", canvasWidth / 2, canvasHeight - (bannerHeight / 4));
   // Draw Otter
   if (otterImage) image(otterImage, otterX, otterY, otterWidth, otterHeight);
-  // DEBUG: Visualize the hitbox
-  fill(255, 0, 0, 0); // Semi-transparent red
+  // DEBUG: Visualize the hitbox by making the box red and slightly transparent fill(255, 0, 0, 150) changed to 255, 0, 0, 0 after the proper location was defined.
+  fill(255, 0, 0, 0); // Semi-transparent red -- changed to fully transparent after troubleshooting.
   noStroke();
 rect(
-  otterX + (otterWidth - hitboxWidth) / 2 - hitboxWidth * 0.1,  // Center horizontally
-  otterY + (otterHeight - hitboxHeight) / 2 + hitboxHeight * 0.6,  // Move DOWN slightly
+  otterX + (otterWidth - hitboxWidth) / 2 - hitboxWidth * 0.1,  // Center horizontally and move slightly to align.
+  otterY + (otterHeight - hitboxHeight) / 2 + hitboxHeight * 0.6,  // Move rect down to better align with otter png.
   hitboxWidth,
   hitboxHeight
 );
@@ -156,7 +221,7 @@ rect(
   otterY = constrain(otterY, riverTop + hitboxHeight / 2 - 20, riverBottom - hitboxHeight / 2 - 40);
   otterX = constrain(otterX, riverLeft, riverRight - hitboxWidth);
 
-  // **SPAWN OBSTACLES**
+  // SPAWN OBSTACLES
   if (frameCount % spawnRate === 0) {
     let obstacleY = random(riverTop, riverBottom - obstacleHeight * 0.9); // Moves spawn area lower based on obstacle height
     let logType = floor(random(0, 8));
@@ -169,7 +234,7 @@ rect(
     });
   }
 
-  // **UPDATE OBSTACLES & CHECK COLLISION**
+  // Obstacle updates (move the obstacle) and check for collision
   for (let i = obstacles.length - 1; i >= 0; i--) {
     let obs = obstacles[i];
     obs.x -= obstacleSpeed;
@@ -180,7 +245,7 @@ rect(
       rect(obs.x, obs.y, obs.width, obs.height);
     }
 
-    // **Collision Detection**
+    // Define obstacle and otter collision
     if (
       otterX + (otterWidth - hitboxWidth) / 2 < obs.x + obs.width &&
       otterX + hitboxWidth + (otterWidth - hitboxWidth) / 2 > obs.x &&
@@ -188,27 +253,44 @@ rect(
       otterY + hitboxHeight + (otterHeight - hitboxHeight) / 2 > obs.y
     ) {
       lives--;
+      hitMessage = random(messages);
+      messageTimer = 120;
       obstacles.splice(i, 1);
       if (lives <= 0) gameState = 3;
     } else if (obs.x + obs.width < 0) {
       score += 10;
       obstacles.splice(i, 1);
     }
-    // Display Bottom Banner
-    fill(100, 40, 150);
-    noStroke();
-    rect(0, canvasHeight - bannerHeight, canvasWidth, bannerHeight);
 
-    fill(255);
-    textSize(20);
-    textAlign(LEFT, CENTER);
-    text(`Otters: ${lives}`, 20, canvasHeight - (bannerHeight / 2));
-    textAlign(RIGHT, CENTER);
-    text(`Score: ${score}`, canvasWidth - 20, canvasHeight - (bannerHeight / 2));
-    textAlign(CENTER, CENTER);
-    textSize(14);
-    text("Press P to Pause", canvasWidth / 2, canvasHeight - (bannerHeight / 4));
 }
+// Show hit message if the timer is active
+if (messageTimer > 0) {
+  // Optional: background box for better visibility
+  fill(0, 150); // semi-transparent black
+  noStroke();
+  rect(canvasWidth / 4, canvasHeight / 1.6, canvasWidth / 2, 120, 10);
+
+  fill(255);        // white text fill
+  stroke(0);        // black outline
+  strokeWeight(2);  // make the outline visible 
+
+  textSize(24);
+  textAlign(CENTER, CENTER);
+  text(hitMessage, canvasWidth / 2, canvasHeight / 1.40);
+  messageTimer--;
+}
+
+    // //Display Hit Message if Active
+    // if (messageTimer > 0) {
+    //   fill(0);
+    //   textSize(30);
+    //   textAlign(CENTER, CENTER);
+    //   stroke(0);
+    //   strokeWeight(2);
+    //   fill(255);
+    //   text(hitMessage, canvasWidth / 2, canvasHeight / 3);
+    //   messageTimer--;
+    // }
   }
 
 
@@ -234,6 +316,8 @@ function mousePressed() {
     gameState = 0; // On gameOver, restart at the instruction screen.
     lives = 3; // RESET LIVES
     score = 0; // RESET SCORE
+    hitMessage = "";
+    messageTimer = 0;
     obstacles = []; // CLEAR OBSTACLES
   }
   if (gameState === 0) gameState = 1; // From instruction screen, start game.
